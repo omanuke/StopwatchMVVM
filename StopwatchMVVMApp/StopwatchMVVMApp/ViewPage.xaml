@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:StopwatchMVVMApp;assembly=StopwatchMVVMApp"
+             x:Class="StopwatchMVVMApp.ViewPage">
+  <ContentPage.Resources>
+    <ResourceDictionary>
+      <local:TToTimeSVConverter x:Key="TTSVConverter"/>
+    </ResourceDictionary>
+  </ContentPage.Resources>
+  <StackLayout>
+    <Label Text="{Binding TSub.Value,Converter={StaticResource TTSVConverter}}"
+           HorizontalOptions="Center"
+           FontSize="30"/>
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+      <Button Text="{Binding BtnSSub.Value}"
+              Command="{Binding StartStopCmd}"/>
+      <Button Text="Lap"
+              Grid.Column="1"
+              Command="{Binding LapCmd}"/>
+    </Grid>
+    <ListView ItemsSource="{Binding LObCol}">
+      <ListView.ItemTemplate>
+        <DataTemplate>
+          <ViewCell>
+            <Grid>
+              <Label HorizontalOptions="Start"
+                     Text="{Binding No}"/>
+              <Label HorizontalOptions="End"
+                     Text="{Binding Time,Converter={StaticResource TTSVConverter}}}"/>
+            </Grid>
+          </ViewCell>
+        </DataTemplate>
+      </ListView.ItemTemplate>
+    </ListView>
+  </StackLayout>
+</ContentPage>
