@@ -64,11 +64,11 @@ module Model=
         let timerD=spawnTimer 16<|fun ()->tSub.Value<-sw.ElapsedMilliseconds
         let rec loop lastEMSec=
           async{
-            let! msg=mbox.Receive()
+            let! msg=mbox.Receive() 
             match msg with
             |MsgStart_Stop->
-              //stopの処理
-              timerD.Dispose()
+              //###stopの処理
+              timerD.Dispose()//ほんとは最後に送った値を見てとかしないとだけど手抜き
               let eMSec=sw.ElapsedMilliseconds
               onCtx<|fun()->
                 lObCol.Add<|toLapV rSrcSub (eMSec-lastEMSec)
@@ -77,7 +77,7 @@ module Model=
               //stop状態へ
               return! stopLoop()
             |MsgLap->
-              //Lap追加してstart状態続行
+              //###Lap追加してstart状態続行
               let eMSec=sw.ElapsedMilliseconds
               onCtx<|fun()->lObCol.Add<|toLapV rSrcSub (eMSec-lastEMSec)
               return! loop eMSec
@@ -89,7 +89,7 @@ module Model=
           let! msg=mbox.Receive()
           match msg with
           |MsgStart_Stop->
-            //start状態へ
+            //###start状態へ
             onCtx<|fun()->statSub.Value<-MSStarted
             let sw=Stopwatch.StartNew()
             return! startLoop sw 0L
@@ -103,7 +103,12 @@ module Model=
 open Model
 open VmUtil
 module ViewModel=
+  let toBtnS=function
+    |MSNone->"Start"
+    |MSStarted->"Stop"
+    |MSStopped _->"Restart"
   type SWatchVM()=
+    //値再送出用のsub
     let reRaiseSrcSub=sub false
     //model
     let actor,tSub,statSub,lObCol=newModel reRaiseSrcSub
@@ -123,10 +128,7 @@ module ViewModel=
             )
     //stateによりボタンの表示変更
     let btnSSub,_=statSub.AsObservable()
-                  |>Observable.map (function
-                    |MSNone->"Start"
-                    |MSStarted->"Stop"
-                    |MSStopped _->"Restart")
+                  |>Observable.map toBtnS
                   |>strongObToSub
     [<CLIEvent>]
     member x.ViewEvt=vEvt.Publish

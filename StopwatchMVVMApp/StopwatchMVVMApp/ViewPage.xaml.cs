@@ -30,6 +30,7 @@ namespace StopwatchMVVMApp
 
 	class TToTimeSVConverter : IValueConverter
 	{
+		//コンストラクタで渡したときのXAMLからのConverterを生成して使うやり方がわからなかったので…
 		static public Subject<bool> ReRaiseSrcSub { get; set; }
 		//public TToTimeSVConverter(Subject<bool> reRaiseSrcSub)
 		//{
