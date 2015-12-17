@@ -23,6 +23,12 @@
               Grid.Column="1"
               Command="{Binding LapCmd}"/>
     </Grid>
+    <Grid>
+      <Label Text="switch"
+             HorizontalOptions="Start"/>
+      <Switch IsToggled="{Binding ReRaiseSrcSub.Value,Mode=TwoWay}"
+              HorizontalOptions="End"/>
+    </Grid>
     <ListView ItemsSource="{Binding LObCol}">
       <ListView.ItemTemplate>
         <DataTemplate>
@@ -31,7 +37,7 @@
               <Label HorizontalOptions="Start"
                      Text="{Binding No}"/>
               <Label HorizontalOptions="End"
-                     Text="{Binding Time,Converter={StaticResource TTSVConverter}}}"/>
+                     Text="{Binding TimeSub.Value,Converter={StaticResource TTSVConverter}}}"/>
             </Grid>
           </ViewCell>
         </DataTemplate>

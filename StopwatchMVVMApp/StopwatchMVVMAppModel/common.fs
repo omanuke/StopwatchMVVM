@@ -153,6 +153,7 @@ module Util=
                                 for o in _obs do o.OnNext v
                                 raisePropChanged "Value"
   let sub v=Subject v
+  let subV (sub:Subject<_>)=sub.Value
   let setSub (sub:Subject<_>) v=sub.Value<-v
   let asOb (sub:Subject<_>)=sub.AsObservable()
   let weakSubscribe' key f ob=

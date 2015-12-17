@@ -22,14 +22,19 @@ module Model=
       }
     Async.Start(loop(),cts.Token)
     {new IDisposable with member x.Dispose()=cts.Cancel()}      
+  let reRaiseSub (sub:Subject<_>) v=
+    let vSub=Subject v
+    sub.Changed|>Event.add(fun _->vSub.Value<-vSub.Value)
+    vSub
+
   //modelへのリクエスト
   type Msg=
     |MsgStart_Stop
     |MsgLap
   //Lapの値
   type LapVal=
-    { No:int;Time:int64}
-  let lapTime v=v.Time
+    { No:int;TimeSub:Subject<int64>}
+  let lapTime v=v.TimeSub.Value
   //計測結果
   type LapResult=
     { Max:double
@@ -45,18 +50,18 @@ module Model=
     |MSNone
     |MSStarted
     |MSStopped of ^a
-  let newModel()=
+  let newModel (rSrcSub:Subject<_>)=
     //modelの値
-    let tSub=sub 0L
+    let tSub=reRaiseSub rSrcSub 0L
     let statSub=sub MSNone
     let lObCol=ObservableCollection<_>()
-    let toLapV t={No=lObCol.Count+1;Time=t}
+    let toLapV rSrcSub t={No=lObCol.Count+1;TimeSub=reRaiseSub rSrcSub t}
     //状態遷移
     let actor=Actor<_>.Start(fun mbox->
       //start状態
       let rec startLoop (sw:Stopwatch) lastEMSec=
         lObCol.Clear()//前の残りあれば消す
-        let timerD=spawnTimer 3<|fun ()->tSub.Value<-sw.ElapsedMilliseconds
+        let timerD=spawnTimer 16<|fun ()->tSub.Value<-sw.ElapsedMilliseconds
         let rec loop lastEMSec=
           async{
             let! msg=mbox.Receive()
@@ -66,7 +71,7 @@ module Model=
               timerD.Dispose()
               let eMSec=sw.ElapsedMilliseconds
               onCtx<|fun()->
-                lObCol.Add<|toLapV(eMSec-lastEMSec)
+                lObCol.Add<|toLapV rSrcSub (eMSec-lastEMSec)
                 let r=lObCol|>Seq.map(lapTime>>double)|>toResult
                 statSub.Value<-MSStopped r
               //stop状態へ
@@ -74,7 +79,7 @@ module Model=
             |MsgLap->
               //Lap追加してstart状態続行
               let eMSec=sw.ElapsedMilliseconds
-              onCtx<|fun()->lObCol.Add<|toLapV(eMSec-lastEMSec)
+              onCtx<|fun()->lObCol.Add<|toLapV rSrcSub (eMSec-lastEMSec)
               return! loop eMSec
           }
         loop lastEMSec
@@ -99,8 +104,9 @@ open Model
 open VmUtil
 module ViewModel=
   type SWatchVM()=
+    let reRaiseSrcSub=sub false
     //model
-    let actor,tSub,statSub,lObCol=newModel()
+    let actor,tSub,statSub,lObCol=newModel reRaiseSrcSub
     //ui related
     let vEvt=Event<_>()//messengerがわり
     let startStopCmd=toEverCmd<|fun _->actor.Post MsgStart_Stop
@@ -122,10 +128,11 @@ module ViewModel=
                     |MSStarted->"Stop"
                     |MSStopped _->"Restart")
                   |>strongObToSub
+    [<CLIEvent>]
+    member x.ViewEvt=vEvt.Publish
     member x.BtnSSub=btnSSub
     member x.LapCmd=lapCmd
     member x.StartStopCmd=startStopCmd
     member x.TSub=tSub
     member x.LObCol=lObCol
-    [<CLIEvent>]
-    member x.ViewEvt=vEvt.Publish
+    member x.ReRaiseSrcSub=reRaiseSrcSub

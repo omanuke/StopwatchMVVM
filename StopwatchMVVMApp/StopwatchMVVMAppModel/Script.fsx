@@ -4,4 +4,4 @@
 #load "PortableLibrary1.fs"
 open StopwatchMVVMAppModel
 
-System.String.Format("{0:#00}'{1:00}\"{2:000}", 1, 5, 21)
+System.String.Format("{0:#00}'{1:00}\"{2:0}", 1, 5, 21)

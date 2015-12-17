@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Xamarin.Forms;
+using static Merlin.Common.Util;
 using static StopwatchMVVMAppModel.ViewModel;
 
 namespace StopwatchMVVMApp
@@ -14,8 +15,11 @@ namespace StopwatchMVVMApp
 	{
 		public ViewPage()
 		{
+			//Resources = new ResourceDictionary();
+			//Resources["TTSVConverter"] = new TToTimeSVConverter(vm.ReRaiseSrcSub);
 			InitializeComponent();
 			var vm = new SWatchVM();
+			TToTimeSVConverter.ReRaiseSrcSub = vm.ReRaiseSrcSub;
 			vm.ViewEvt += async (_, r) => {
 				var s = string.Format("Max={0}\r\nMin={1}\r\nAvg={2}", r.Max, r.Min, r.Avg);
 				await DisplayAlert("Result",s,"OK");
@@ -26,13 +30,21 @@ namespace StopwatchMVVMApp
 
 	class TToTimeSVConverter : IValueConverter
 	{
+		static public Subject<bool> ReRaiseSrcSub { get; set; }
+		//public TToTimeSVConverter(Subject<bool> reRaiseSrcSub)
+		//{
+		//	_reRaiseSrcSub = reRaiseSrcSub;
+		//}
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
 		{
 			var v = (Int64)value;
 			var m = v / 1000 / 60;
 			var s = v / 1000 % 60;
 			var msec = v % 1000;
-			return string.Format("{0:#00}'{1:00}\"{2:000}", m, s, msec);
+			var fmt = ReRaiseSrcSub!=null&&ReRaiseSrcSub.Value ? 
+				"{0:#00}'{1:00}\"{2:000}" : 
+				"{0:#00}'{1:00}";
+			return string.Format(fmt, m, s, msec);
 		}
 
 		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
